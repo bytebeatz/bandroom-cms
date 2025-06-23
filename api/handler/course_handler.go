@@ -1,0 +1,89 @@
+package handler
+
+import (
+	"log"
+	"net/http"
+
+	"github.com/bytebeatz/bandroom-cms/api/dto"
+	"github.com/bytebeatz/bandroom-cms/core/service"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+)
+
+// CourseHandler defines HTTP handlers for course operations.
+type CourseHandler struct {
+	courseService *service.CourseService
+}
+
+// NewCourseHandler initializes a new CourseHandler.
+func NewCourseHandler(svc *service.CourseService) *CourseHandler {
+	return &CourseHandler{courseService: svc}
+}
+
+// Create handles POST /api/courses
+func (h *CourseHandler) Create(c *gin.Context) {
+	var req dto.CourseRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Println("Failed to bind JSON:", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		return
+	}
+
+	log.Printf("Parsed CourseRequest: %+v\n", req)
+
+	userID := c.GetString("user_id")
+	role := c.GetString("role")
+
+	log.Printf("Authenticated user: %s with role %s\n", userID, role)
+
+	course := req.ToModel() // Returns model.Course
+	if userID != "" {
+		parsedID, err := uuid.Parse(userID)
+		if err == nil {
+			course.CreatorID = &parsedID
+		}
+	}
+
+	err := h.courseService.CreateCourse(c.Request.Context(), &course) // Pass pointer
+	if err != nil {
+		log.Println("Failed to create course:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not create course"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, dto.FromModel(course)) // No need to deref
+}
+
+// GetByID handles GET /api/courses/:id
+func (h *CourseHandler) GetByID(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		return
+	}
+
+	course, err := h.courseService.GetCourseByID(c, id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Course not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.FromModel(*course))
+}
+
+// List handles GET /api/courses
+func (h *CourseHandler) List(c *gin.Context) {
+	courses, err := h.courseService.ListCourses(c, false)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not list courses"})
+		return
+	}
+
+	var res []dto.CourseResponse
+	for _, course := range courses {
+		res = append(res, dto.FromModel(*course))
+	}
+
+	c.JSON(http.StatusOK, res)
+}
+
