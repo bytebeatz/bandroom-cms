@@ -25,8 +25,8 @@ type Course struct {
 	Difficulty  DifficultyLevel `json:"difficulty"`
 	IsPublished bool            `json:"is_published"`
 
-	Tags     []string               `json:"tags,omitempty"`
-	Metadata map[string]interface{} `json:"metadata,omitempty"`
+	Tags     []string       `json:"tags,omitempty"`
+	Metadata map[string]any `json:"metadata,omitempty"`
 
 	Version   int        `json:"version"`
 	DeletedAt *time.Time `json:"deleted_at,omitempty"`

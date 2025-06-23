@@ -17,28 +17,23 @@ type CourseService struct {
 	repo repository.CourseRepository
 }
 
-// NewCourseService initializes a new CourseService.
 func NewCourseService(repo repository.CourseRepository) *CourseService {
 	return &CourseService{repo: repo}
 }
 
-// CreateCourse handles creation logic including UUIDs, timestamps, slug generation, and context-driven user metadata.
 func (s *CourseService) CreateCourse(ctx context.Context, course *model.Course) error {
 	course.ID = uuid.New()
 	course.CreatedAt = time.Now().UTC()
 	course.UpdatedAt = course.CreatedAt
 
-	// Generate slug from title if empty
 	if strings.TrimSpace(course.Slug) == "" {
 		course.Slug = utils.GenerateSlug(course.Title)
 	}
 
-	// Default version
 	if course.Version == 0 {
 		course.Version = 1
 	}
 
-	// Set creator ID from context (if present)
 	if val := ctx.Value("user_id"); val != nil {
 		if userIDStr, ok := val.(string); ok {
 			if parsed, err := uuid.Parse(userIDStr); err == nil {
@@ -48,14 +43,24 @@ func (s *CourseService) CreateCourse(ctx context.Context, course *model.Course) 
 	}
 
 	fmt.Printf("Creating course: %+v\n", course)
-
 	return s.repo.Create(ctx, course)
 }
 
-func (s *CourseService) UpdateCourse(ctx context.Context, course *model.Course) error {
-	course.UpdatedAt = time.Now().UTC()
-	course.Version += 1
-	return s.repo.Update(ctx, course)
+func (s *CourseService) UpdateCourse(ctx context.Context, updated *model.Course) error {
+	existing, err := s.repo.GetByID(ctx, updated.ID)
+	if err != nil {
+		return fmt.Errorf("course not found: %w", err)
+	}
+
+	updated.CreatedAt = existing.CreatedAt
+	updated.UpdatedAt = time.Now().UTC()
+	updated.Version = existing.Version + 1
+
+	if updated.Slug == "" {
+		updated.Slug = utils.GenerateSlug(updated.Title)
+	}
+
+	return s.repo.Update(ctx, updated)
 }
 
 func (s *CourseService) DeleteCourse(ctx context.Context, id uuid.UUID) error {

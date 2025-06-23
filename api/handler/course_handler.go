@@ -71,6 +71,53 @@ func (h *CourseHandler) GetByID(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.FromModel(*course))
 }
 
+// Update handles PUT /api/courses/:id
+func (h *CourseHandler) Update(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid course ID"})
+		return
+	}
+
+	var req dto.CourseRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON"})
+		return
+	}
+
+	course := req.ToModel()
+	course.ID = id
+	userID := c.GetString("user_id")
+	if userID != "" {
+		if parsed, err := uuid.Parse(userID); err == nil {
+			course.CreatorID = &parsed
+		}
+	}
+
+	if err := h.courseService.UpdateCourse(c.Request.Context(), &course); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not update course"})
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.FromModel(course))
+}
+
+// Delete handles DELETE /api/courses/:id
+func (h *CourseHandler) Delete(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid course ID"})
+		return
+	}
+
+	if err := h.courseService.DeleteCourse(c.Request.Context(), id); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not delete course"})
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
 // List handles GET /api/courses
 func (h *CourseHandler) List(c *gin.Context) {
 	courses, err := h.courseService.ListCourses(c, false)
@@ -86,4 +133,3 @@ func (h *CourseHandler) List(c *gin.Context) {
 
 	c.JSON(http.StatusOK, res)
 }
-

@@ -21,11 +21,13 @@ func SetupRouter(courseHandler *handler.CourseHandler) *gin.Engine {
 	api := r.Group("/api", middleware.AuthMiddleware())
 	{
 		courses := api.Group("/courses")
-		courses.Use(middleware.RequireAdmin()) // ✅ Admin-only access
+		courses.Use(middleware.RequireAdmin())
 		{
 			courses.POST("", courseHandler.Create)
 			courses.GET("", courseHandler.List)
 			courses.GET("/:id", courseHandler.GetByID)
+			courses.PUT("/:id", courseHandler.Update)
+			courses.DELETE("/:id", courseHandler.Delete)
 		}
 	}
 
