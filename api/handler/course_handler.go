@@ -131,5 +131,7 @@ func (h *CourseHandler) List(c *gin.Context) {
 		res = append(res, dto.FromModel(*course))
 	}
 
-	c.JSON(http.StatusOK, res)
+	c.JSON(http.StatusOK, gin.H{
+		"courses": res,
+	})
 }

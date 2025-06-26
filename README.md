@@ -6,8 +6,8 @@ curl -X POST http://localhost:8080/api/courses \
  -H "Content-Type: application/json" \
  -H "Authorization: Bearer <YOUR_TOKEN>" \
  -d '{
-"title": "Intro to Rhythm",
-"description": "Learn basic rhythm notation",
+"title": "Intro to Singing",
+"description": "Learn basic singing",
 "difficulty": 1,
 "tags": ["rhythm", "timing"],
 "language": "en",

@@ -32,8 +32,12 @@ func Start() error {
 	courseService := service.NewCourseService(courseRepo)
 	courseHandler := handler.NewCourseHandler(courseService)
 
-	// Setup Gin router
-	r := router.SetupRouter(courseHandler)
+	unitRepo := _interface.NewUnitPG(config.DB)
+	unitService := service.NewUnitService(unitRepo)
+	unitHandler := handler.NewUnitHandler(unitService)
+
+	// Setup Gin router with both handlers
+	r := router.SetupRouter(courseHandler, unitHandler)
 
 	// Graceful shutdown setup
 	srv := &httpServer{
@@ -74,3 +78,4 @@ func (s *httpServer) Run() error {
 
 	return srv.Shutdown(ctx)
 }
+
