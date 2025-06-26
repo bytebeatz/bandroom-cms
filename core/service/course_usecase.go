@@ -22,6 +22,15 @@ func NewCourseService(repo repository.CourseRepository) *CourseService {
 }
 
 func (s *CourseService) CreateCourse(ctx context.Context, course *model.Course) error {
+	// Check for duplicate title before insert
+	exists, err := s.repo.ExistsByTitle(ctx, course.Title)
+	if err != nil {
+		return fmt.Errorf("error checking for duplicate title: %w", err)
+	}
+	if exists {
+		return fmt.Errorf("course with title '%s' already exists", course.Title)
+	}
+
 	course.ID = uuid.New()
 	course.CreatedAt = time.Now().UTC()
 	course.UpdatedAt = course.CreatedAt

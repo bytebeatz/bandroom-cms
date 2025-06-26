@@ -3,6 +3,7 @@ package handler
 import (
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/bytebeatz/bandroom-cms/api/dto"
 	"github.com/bytebeatz/bandroom-cms/core/service"
@@ -46,6 +47,11 @@ func (h *CourseHandler) Create(c *gin.Context) {
 
 	err := h.courseService.CreateCourse(c.Request.Context(), &course) // Pass pointer
 	if err != nil {
+		// Check for title conflict
+		if strings.Contains(err.Error(), "already exists") {
+			c.JSON(http.StatusConflict, gin.H{"error": "Course title already exists"})
+			return
+		}
 		log.Println("Failed to create course:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not create course"})
 		return
@@ -135,3 +141,4 @@ func (h *CourseHandler) List(c *gin.Context) {
 		"courses": res,
 	})
 }
+

@@ -100,6 +100,16 @@ func (r *coursePG) List(ctx context.Context, publishedOnly bool) ([]*model.Cours
 	return courses, nil
 }
 
+// ExistsByTitle checks if a course with the same title already exists (case-insensitive).
+func (r *coursePG) ExistsByTitle(ctx context.Context, title string) (bool, error) {
+	query := `SELECT EXISTS (
+		SELECT 1 FROM courses WHERE LOWER(title) = LOWER($1)
+	)`
+	var exists bool
+	err := r.db.QueryRowContext(ctx, query, title).Scan(&exists)
+	return exists, err
+}
+
 // scanCourse extracts a Course from a DB row.
 func scanCourse(scanner interface {
 	Scan(dest ...any) error
@@ -116,9 +126,7 @@ func scanCourse(scanner interface {
 		&c.Language,
 		&c.Difficulty,
 		&c.IsPublished,
-		pq.Array(
-			&tags,
-		),
+		pq.Array(&tags),
 		&metaRaw,
 		&c.Version,
 		&c.DeletedAt,
@@ -134,3 +142,4 @@ func scanCourse(scanner interface {
 	_ = json.Unmarshal(metaRaw, &c.Metadata)
 	return &c, nil
 }
+

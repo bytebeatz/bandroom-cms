@@ -15,4 +15,8 @@ type CourseRepository interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*model.Course, error)
 	GetBySlug(ctx context.Context, slug string) (*model.Course, error)
 	List(ctx context.Context, publishedOnly bool) ([]*model.Course, error)
+
+	// ✅ New method for conflict prevention
+	ExistsByTitle(ctx context.Context, title string) (bool, error)
 }
+

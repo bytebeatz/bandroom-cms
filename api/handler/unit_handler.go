@@ -118,3 +118,31 @@ func (h *UnitHandler) ListByCourse(c *gin.Context) {
 
 	c.JSON(http.StatusOK, res)
 }
+
+// List handles GET /api/units?course_id=...
+func (h *UnitHandler) List(c *gin.Context) {
+	courseIDStr := c.Query("course_id")
+	if courseIDStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing course_id"})
+		return
+	}
+
+	courseID, err := uuid.Parse(courseIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid course_id"})
+		return
+	}
+
+	units, err := h.unitService.ListUnitsByCourseID(c.Request.Context(), courseID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not fetch units"})
+		return
+	}
+
+	var res []dto.UnitResponse
+	for _, u := range units {
+		res = append(res, dto.FromUnitModel(*u))
+	}
+
+	c.JSON(http.StatusOK, res)
+}
