@@ -9,6 +9,8 @@ import (
 func SetupRouter(
 	courseHandler *handler.CourseHandler,
 	unitHandler *handler.UnitHandler,
+	skillHandler *handler.SkillHandler,
+	lessonHandler *handler.LessonHandler,
 ) *gin.Engine {
 	r := gin.New()
 
@@ -43,6 +45,28 @@ func SetupRouter(
 			units.GET("/:id", unitHandler.GetByID)
 			units.PUT("/:id", unitHandler.Update)
 			units.DELETE("/:id", unitHandler.Delete)
+		}
+
+		// Skill routes
+		skills := api.Group("/skills")
+		skills.Use(middleware.RequireAdmin())
+		{
+			skills.POST("", skillHandler.Create)
+			skills.GET("", skillHandler.ListByUnit) // expects ?unit_id= query param
+			skills.GET("/:id", skillHandler.GetByID)
+			skills.PUT("/:id", skillHandler.Update)
+			skills.DELETE("/:id", skillHandler.Delete)
+		}
+
+		// Lesson routes
+		lessons := api.Group("/lessons")
+		lessons.Use(middleware.RequireAdmin())
+		{
+			lessons.POST("", lessonHandler.Create)
+			lessons.GET("", lessonHandler.ListBySkill) // expects ?skill_id= query param
+			lessons.GET("/:id", lessonHandler.GetByID)
+			lessons.PUT("/:id", lessonHandler.Update)
+			lessons.DELETE("/:id", lessonHandler.Delete)
 		}
 	}
 
