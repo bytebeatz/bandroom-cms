@@ -29,12 +29,21 @@ func (h *SkillHandler) Create(c *gin.Context) {
 
 	log.Printf("Parsed SkillRequest: %+v\n", req)
 
-	userID := c.GetString("user_id")
+	userIDStr := c.GetString("user_id")
 	role := c.GetString("role")
-	log.Printf("Authenticated user: %s with role %s\n", userID, role)
+	log.Printf("Authenticated user: %s with role %s\n", userIDStr, role)
+
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		log.Println("Invalid user_id in context:", err)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user"})
+		return
+	}
 
 	skill := req.ToModel()
-	err := h.skillService.CreateSkill(c.Request.Context(), &skill, skill.CourseID)
+	skill.CreatorID = userID // ✅ This is the key line
+
+	err = h.skillService.CreateSkill(c.Request.Context(), &skill, skill.CourseID)
 	if err != nil {
 		if strings.Contains(err.Error(), "already exists") {
 			c.JSON(
@@ -127,4 +136,3 @@ func (h *SkillHandler) Delete(c *gin.Context) {
 
 	c.Status(http.StatusNoContent)
 }
-

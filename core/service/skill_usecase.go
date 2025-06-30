@@ -48,6 +48,11 @@ func (s *SkillService) CreateSkill(
 		skill.Version = 1
 	}
 
+	// ✅ Validate creator_id is not nil (i.e. zero UUID)
+	if skill.CreatorID == uuid.Nil {
+		return fmt.Errorf("creator_id must be set")
+	}
+
 	return s.repo.Create(ctx, skill)
 }
 
@@ -82,4 +87,3 @@ func (s *SkillService) ListSkillsByUnitID(
 ) ([]*model.Skill, error) {
 	return s.repo.ListByUnitID(ctx, unitID)
 }
-
