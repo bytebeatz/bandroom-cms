@@ -28,7 +28,22 @@ func (h *LessonHandler) Create(c *gin.Context) {
 	}
 
 	lesson := req.ToModel()
-	err := h.lessonService.CreateLesson(c.Request.Context(), &lesson, lesson.SkillID)
+
+	// ✅ Extract creator_id from context (set by middleware)
+	userIDStr := c.GetString("user_id")
+	role := c.GetString("role")
+	log.Printf("Authenticated user: %s with role %s\n", userIDStr, role)
+
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		log.Println("Invalid user_id in context:", err)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user"})
+		return
+	}
+
+	lesson.CreatorID = userID
+
+	err = h.lessonService.CreateLesson(c.Request.Context(), &lesson, lesson.SkillID)
 	if err != nil {
 		if strings.Contains(err.Error(), "already exists") {
 			c.JSON(
@@ -120,4 +135,3 @@ func (h *LessonHandler) Delete(c *gin.Context) {
 
 	c.Status(http.StatusNoContent)
 }
-
