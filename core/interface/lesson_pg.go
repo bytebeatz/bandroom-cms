@@ -27,22 +27,22 @@ func (r *lessonPG) Create(ctx context.Context, l *model.Lesson) error {
 
 	query := `
 		INSERT INTO lessons (
-			id, skill_id, slug, title, order_index, total_exercises, base_xp,
+			id, skill_id, slug, title, description, order_index, total_exercises, base_xp,
 			bonus_xp, reward_gems, reward_hearts, reward_condition,
 			estimated_duration, difficulty_rating, is_testable,
 			creator_id, tags, metadata, version,
 			deleted_at, created_at, updated_at
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7,
-			$8, $9, $10, $11,
-			$12, $13, $14,
-			$15, $16, $17, $18,
-			$19, $20, $21
+			$1, $2, $3, $4, $5, $6, $7, $8,
+			$9, $10, $11, $12,
+			$13, $14, $15,
+			$16, $17, $18, $19,
+			$20, $21, $22
 		)
 	`
 
 	_, err = r.db.ExecContext(ctx, query,
-		l.ID, l.SkillID, l.Slug, l.Title, l.OrderIndex, l.TotalExercises, l.BaseXP,
+		l.ID, l.SkillID, l.Slug, l.Title, l.Description, l.OrderIndex, l.TotalExercises, l.BaseXP,
 		l.BonusXP, l.RewardGems, l.RewardHearts, l.RewardCondition,
 		l.EstimatedDuration, l.DifficultyRating, l.IsTestable,
 		l.CreatorID, pq.StringArray(l.Tags), metadataJSON, l.Version,
@@ -59,16 +59,16 @@ func (r *lessonPG) Update(ctx context.Context, l *model.Lesson) error {
 
 	query := `
 		UPDATE lessons SET
-			slug = $2, title = $3, order_index = $4, total_exercises = $5,
-			base_xp = $6, bonus_xp = $7, reward_gems = $8, reward_hearts = $9,
-			reward_condition = $10, estimated_duration = $11, difficulty_rating = $12,
-			is_testable = $13, tags = $14, metadata = $15, version = $16,
-			deleted_at = $17, updated_at = $18
+			slug = $2, title = $3, description = $4, order_index = $5, total_exercises = $6,
+			base_xp = $7, bonus_xp = $8, reward_gems = $9, reward_hearts = $10,
+			reward_condition = $11, estimated_duration = $12, difficulty_rating = $13,
+			is_testable = $14, tags = $15, metadata = $16, version = $17,
+			deleted_at = $18, updated_at = $19
 		WHERE id = $1
 	`
 
 	_, err = r.db.ExecContext(ctx, query,
-		l.ID, l.Slug, l.Title, l.OrderIndex, l.TotalExercises,
+		l.ID, l.Slug, l.Title, l.Description, l.OrderIndex, l.TotalExercises,
 		l.BaseXP, l.BonusXP, l.RewardGems, l.RewardHearts,
 		l.RewardCondition, l.EstimatedDuration, l.DifficultyRating,
 		l.IsTestable, pq.StringArray(l.Tags), metadataJSON, l.Version,
@@ -84,7 +84,7 @@ func (r *lessonPG) Delete(ctx context.Context, id uuid.UUID) error {
 
 func (r *lessonPG) GetByID(ctx context.Context, id uuid.UUID) (*model.Lesson, error) {
 	query := `
-		SELECT id, skill_id, slug, title, order_index, total_exercises, base_xp,
+		SELECT id, skill_id, slug, title, description, order_index, total_exercises, base_xp,
 		       bonus_xp, reward_gems, reward_hearts, reward_condition,
 		       estimated_duration, difficulty_rating, is_testable,
 		       creator_id, tags, metadata, version,
@@ -97,7 +97,7 @@ func (r *lessonPG) GetByID(ctx context.Context, id uuid.UUID) (*model.Lesson, er
 
 func (r *lessonPG) ListBySkillID(ctx context.Context, skillID uuid.UUID) ([]*model.Lesson, error) {
 	query := `
-		SELECT id, skill_id, slug, title, order_index, total_exercises, base_xp,
+		SELECT id, skill_id, slug, title, description, order_index, total_exercises, base_xp,
 		       bonus_xp, reward_gems, reward_hearts, reward_condition,
 		       estimated_duration, difficulty_rating, is_testable,
 		       creator_id, tags, metadata, version,
@@ -139,11 +139,28 @@ func scanLesson(scanner interface {
 	var metadataBytes []byte
 
 	err := scanner.Scan(
-		&l.ID, &l.SkillID, &l.Slug, &l.Title, &l.OrderIndex, &l.TotalExercises, &l.BaseXP,
-		&l.BonusXP, &l.RewardGems, &l.RewardHearts, &l.RewardCondition,
-		&l.EstimatedDuration, &l.DifficultyRating, &l.IsTestable,
-		&l.CreatorID, pq.Array(&l.Tags), &metadataBytes, &l.Version,
-		&l.DeletedAt, &l.CreatedAt, &l.UpdatedAt,
+		&l.ID,
+		&l.SkillID,
+		&l.Slug,
+		&l.Title,
+		&l.Description,
+		&l.OrderIndex,
+		&l.TotalExercises,
+		&l.BaseXP,
+		&l.BonusXP,
+		&l.RewardGems,
+		&l.RewardHearts,
+		&l.RewardCondition,
+		&l.EstimatedDuration,
+		&l.DifficultyRating,
+		&l.IsTestable,
+		&l.CreatorID,
+		pq.Array(&l.Tags),
+		&metadataBytes,
+		&l.Version,
+		&l.DeletedAt,
+		&l.CreatedAt,
+		&l.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err
@@ -157,4 +174,3 @@ func scanLesson(scanner interface {
 
 	return &l, nil
 }
-
